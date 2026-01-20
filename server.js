@@ -1,77 +1,32 @@
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static(__dirname)); // VERY IMPORTANT
 
-const USERS_FILE = "users.json";
-const DATA_FILE = "data.json";
-
-const readJSON = f => JSON.parse(fs.readFileSync(f));
-const writeJSON = (f, d) => fs.writeFileSync(f, JSON.stringify(d, null, 2));
-
-// Auto delete after 5 days
-function cleanOldData() {
-  let data = readJSON(DATA_FILE);
-  const now = Date.now();
-  data = data.filter(x => now - x.timestamp < 5 * 24 * 60 * 60 * 1000);
-  writeJSON(DATA_FILE, data);
-}
-cleanOldData();
-
-// LOGIN
-app.post("/login", (req, res) => {
-  const { id, password } = req.body;
-  const users = readJSON(USERS_FILE);
-  const user = users.find(u => u.id === id && u.password === password);
-  if (!user) return res.json({ success: false });
-  res.json({ success: true, role: user.role, id: user.id });
+// Serve index.html at root (/)
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// CREATE RETAILER
-app.post("/createRetailer", (req, res) => {
-  const users = readJSON(USERS_FILE);
-  users.push({ id: req.body.id, password: req.body.password, role: "retailer" });
-  writeJSON(USERS_FILE, users);
-  res.json({ success: true });
-});
-
-// ADD DATA (WITH AADHAAR)
-app.post("/addData", (req, res) => {
-  const data = readJSON(DATA_FILE);
-  data.push({
-    retailer: req.body.retailer,
-    name: req.body.name,
-    mobile: req.body.mobile,
-    aadhaar: req.body.aadhaar,
-    status: "Pending",
-    timestamp: Date.now()
-  });
-  writeJSON(DATA_FILE, data);
-  res.json({ success: true });
-});
-
-// GET DATA
+// API to get data
 app.get("/data", (req, res) => {
-  cleanOldData();
-  res.json(readJSON(DATA_FILE));
+  const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
+  res.json(data);
 });
 
-// UPDATE STATUS
-app.post("/status", (req, res) => {
-  const data = readJSON(DATA_FILE);
-  data[req.body.index].status = req.body.status;
-  writeJSON(DATA_FILE, data);
+// API to save data
+app.post("/save", (req, res) => {
+  const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
+  data.push(req.body);
+  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
   res.json({ success: true });
 });
 
-// DELETE
-app.post("/delete", (req, res) => {
-  const data = readJSON(DATA_FILE);
-  data.splice(req.body.index, 1);
-  writeJSON(DATA_FILE, data);
-  res.json({ success: true });
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
-app.listen(3000, () => console.log("Server running on http://localhost:3000"));
