@@ -1,22 +1,7 @@
 [
   {
-    "id": "admin",
+    "username": "admin",
     "password": "admin123",
     "role": "admin"
-  },
-  {
-    "id": "JAMTALA CAMP",
-    "password": "@7860@",
-    "role": "retailer"
-  },
-  {
-    "id": "BAKI ONLINE",
-    "password": "123456",
-    "role": "retailer"
-  },
-  {
-    "id": "BAKI ONLINE",
-    "password": "123456",
-    "role": "retailer"
   }
 ]
