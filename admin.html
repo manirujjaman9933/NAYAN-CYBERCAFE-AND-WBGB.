@@ -1,0 +1,58 @@
+<h2>Admin Dashboard</h2>
+<button onclick="logout()">Logout</button>
+
+<h3>Create Retailer</h3>
+<input id="rid" placeholder="Retailer ID">
+<input id="rpass" placeholder="Password">
+<button onclick="create()">Add Retailer</button>
+
+<h3>All Data</h3>
+<div id="data"></div>
+
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+if (!user || user.role !== "admin") location.href="index.html";
+
+function logout(){
+  localStorage.clear();
+  location.href="index.html";
+}
+
+function create(){
+  fetch("/createRetailer",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id:rid.value,password:rpass.value})
+  }).then(()=>alert("Retailer Created"));
+}
+
+function load(){
+  fetch("/data").then(r=>r.json()).then(d=>{
+    data.innerHTML="";
+    d.forEach((x,i)=>{
+      data.innerHTML+=`
+        <b>Retailer:</b> ${x.retailer}<br>
+        Name: ${x.name}<br>
+        Mobile: ${x.mobile}<br>
+        Aadhaar: ${x.aadhaar}<br>
+        Status: ${x.status}<br>
+        <button onclick="status(${i},'Success')">Success</button>
+        <button onclick="status(${i},'Cancel')">Cancel</button>
+        <button onclick="del(${i})">Delete</button>
+        <hr>`;
+    });
+  });
+}
+
+function status(i,s){
+  fetch("/status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({index:i,status:s})})
+  .then(load);
+}
+
+function del(i){
+  fetch("/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({index:i})})
+  .then(load);
+}
+
+load();
+</script>

@@ -1,0 +1,48 @@
+<h2>Retailer Dashboard</h2>
+<button onclick="logout()">Logout</button>
+
+<input id="name" placeholder="Candidate Name">
+<input id="mobile" placeholder="Mobile Number">
+<input id="aadhaar" placeholder="Aadhaar Number">
+<button onclick="add()">Upload</button>
+
+<h3>My Uploaded Data</h3>
+<div id="data"></div>
+
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+if (!user || user.role !== "retailer") location.href="index.html";
+
+function logout(){
+  localStorage.clear();
+  location.href="index.html";
+}
+
+function add(){
+  fetch("/addData",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      retailer: user.id,
+      name: name.value,
+      mobile: mobile.value,
+      aadhaar: aadhaar.value
+    })
+  }).then(()=>load());
+}
+
+function load(){
+  fetch("/data").then(r=>r.json()).then(d=>{
+    data.innerHTML="";
+    d.filter(x=>x.retailer===user.id).forEach(x=>{
+      data.innerHTML+=`
+        Name: ${x.name}<br>
+        Mobile: ${x.mobile}<br>
+        Aadhaar: ${x.aadhaar}<br>
+        Status: ${x.status}
+        <hr>`;
+    });
+  });
+}
+load();
+</script>

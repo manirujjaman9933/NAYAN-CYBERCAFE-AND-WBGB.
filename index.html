@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NAYAN CYBERCAFE AND WBGB</title>
+</head>
+<body style="background:#ddd">
+  <h1>NAYAN CYBERCAFE AND WBGB</h1>
+
+  <input id="id" placeholder="User ID">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+
+  <script>
+    function login() {
+      fetch("/login", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          id: id.value,
+          password: password.value
+        })
+      }).then(r=>r.json()).then(d=>{
+        if(!d.success) return alert("Invalid Login");
+        localStorage.setItem("user", JSON.stringify(d));
+        location.href = d.role === "admin" ? "admin.html" : "retailer.html";
+      });
+    }
+  </script>
+</body>
+</html>
