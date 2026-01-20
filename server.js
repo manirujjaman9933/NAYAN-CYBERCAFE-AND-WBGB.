@@ -1,74 +1,68 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve frontend files
-app.use(express.static(path.join(__dirname, "public")));
-
 // Path to users.json
-const USERS_FILE = path.join(__dirname, "users.json");
+const usersPath = path.join(__dirname, "users.json");
 
-/* =========================
-   TEST ROUTE
-========================= */
+// Read users safely
+function getUsers() {
+  const data = fs.readFileSync(usersPath, "utf-8");
+  return JSON.parse(data);
+}
+
+// Home route
 app.get("/", (req, res) => {
-  res.send("Server is running");
+  res.send(`
+    <h1>NAYAN CYBERCAFE AND WBGB</h1>
+    <form method="POST" action="/login">
+      <input name="username" placeholder="Username" required />
+      <input name="password" type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+  `);
 });
 
-/* =========================
-   USERS ROUTE (FIXES Cannot GET /users)
-========================= */
-app.get("/users", (req, res) => {
-  fs.readFile(USERS_FILE, "utf8", (err, data) => {
-    if (err) {
-      return res.status(500).json({ error: "Unable to read users file" });
-    }
-    res.json(JSON.parse(data));
-  });
-});
-
-/* =========================
-   LOGIN ROUTE
-========================= */
+// Login route
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  fs.readFile(USERS_FILE, "utf8", (err, data) => {
-    if (err) {
-      return res.status(500).json({ success: false });
-    }
+  const users = getUsers();
 
-    const users = JSON.parse(data);
+  const user = users.find(
+    (u) => u.username === username && u.password === password
+  );
 
-    const user = users.find(
-      (u) => u.username === username && u.password === password
-    );
+  if (!user) {
+    return res.status(401).send("Invalid username or password");
+  }
 
-    if (!user) {
-      return res.json({ success: false });
-    }
+  // Role-based response (NO redirect bug)
+  if (user.role === "admin") {
+    return res.send("Admin login successful");
+  }
 
-    // Role-based redirect
-    if (user.role === "admin") {
-      return res.json({ success: true, role: "admin" });
-    } else {
-      return res.json({ success: true, role: "retailer" });
-    }
-  });
+  if (user.role === "retailer") {
+    return res.send("Retailer login successful");
+  }
+
+  res.send("Login successful");
 });
 
-/* =========================
-   START SERVER
-========================= */
+// Users API (fixes Cannot GET /users)
+app.get("/users", (req, res) => {
+  const users = getUsers();
+  res.json(users);
+});
+
+// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
